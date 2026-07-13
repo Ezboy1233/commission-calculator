@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation & VFX Price Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #121214;
+            --card-bg: #1e1e22;
+            --gold-accent: #f5e06b; /* Exact bright video gold from your graphics */
+            --text-white: #ffffff;
+            --text-gray: #a3a3a3;
+            --border-sharp: #2d2d34;
+        }
+
+        body {
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-white);
+            margin: 0;
+            padding: 40px 20px 60px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 120vh; /* Extra vertical room to allow for scrolling room */
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        /* Video/Image Background Wrapper */
+        .bg-video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%; 
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+            background-color: var(--bg-color);
+        }
+
+        /* Video/Image Background Styling & Initial Scale-Down Entry Animation */
+        .bg-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; 
+            will-change: transform; 
+            
+            /* Plays the scale-down entry effect over 1.8 seconds */
+            animation: bgEntrance 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Page layout wrapper - Made 20% wider (600px) */
+        .page-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 700px; /* Expanded from 500px to 600px */
+            position: relative;
+        }
+
+        /* Central Rate Calculator Card with Expansion and Scale-Up Entrance Animation */
+        .calc-card {
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-sharp);
+            width: 100%;
+            padding: 55px 55px; /* Expanded horizontal internal padding */
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            position: relative;
+            box-sizing: border-box;
+
+            /* Starts slightly smaller and invisibly shifts into view */
+            opacity: 0;
+            animation: cardEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation-delay: 0.2s; /* Tiny delay so the user registers the background zoom transition first */
+        }
+
+        /* Horizontal Social Links Bar aligned cleanly at the bottom */
+        .social-bottom-bar {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+            width: 100%;
+        }
+
+        .social-icon-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid var(--gold-accent);
+            background-color: transparent;
+            color: var(--gold-accent);
+            font-size: 1.3rem;
+            text-decoration: none;
+            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+            box-sizing: border-box;
+        }
+
+        /* Inline SVG tuning for precise vector centering */
+        .social-icon-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--gold-accent);
+        }
+
+        .social-icon-btn:hover {
+            transform: scale(1.15);
+        }
+
+        /* Language Toggle Styling */
+        .lang-switch {
+            position: absolute;
+            top: 35px;
+            right: 45px; /* Adjusted to align cleanly with new card padding */
+            display: flex;
+            gap: 5px;
+            background-color: #121214;
+            padding: 4px;
+            border: 1px solid var(--border-sharp);
+        }
+
+        .lang-btn {
+            background: none;
+            border: none;
+            color: var(--text-gray);
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 6px 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+
+        .lang-btn.active {
+            background-color: var(--gold-accent);
+            color: #000000;
+        }
+
+        .header-block {
+            background-color: var(--text-white);
+            color: #000000;
+            padding: 10px 15px;
+            display: inline-block;
+            font-weight: 900;
+            font-size: 1.4rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0px;
+        }
+
+        .header-sub-block {
+            background-color: var(--gold-accent);
+            color: #000000;
+            padding: 8px 15px;
+            display: block;
+            font-weight: 800;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+            margin-bottom: 35px;
+            width: fit-content;
+        }
+
+        .question-block {
+            margin-bottom: 30px;
+        }
+
+        .question-text {
+            font-size: 1.05rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0 0 6px 0;
+        }
+
+        .description {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            margin: 0 0 15px 0;
+            line-height: 1.4;
+        }
+
+        .option-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #121214;
+            padding: 14px 16px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            border: 1px solid var(--border-sharp);
+            transition: all 0.2s ease;
+        }
+
+        .option-row:hover {
+            border-color: var(--gold-accent);
+            background-color: #17171a;
+        }
+
+        .option-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .option-row input[type="radio"] {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--text-gray);
+            outline: none;
+            background-color: transparent;
+            cursor: pointer;
+            display: grid;
+            place-content: center;
+            border-radius: 0px;
+        }
+
+        .option-row input[type="radio"]::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            transform: scale(0);
+            background-color: var(--gold-accent);
+        }
+
+        .option-row input[type="radio"]:checked {
+            border-color: var(--gold-accent);
+        }
+
+        .option-row input[type="radio"]:checked::before {
+            transform: scale(1);
+        }
+
+        .price-tag {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-gray);
+        }
+
+        .price-tag.active {
+            color: var(--gold-accent);
+        }
+
+        .total-box {
+            background-color: var(--gold-accent);
+            color: #000000;
+            padding: 20px;
+            text-align: center;
+            margin-top: 40px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            box-sizing: border-box;
+            display: block;
+            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s ease, filter 0.2s ease;
+        }
+
+        .total-box:hover {
+            filter: brightness(1.05);
+            transform: scale(1.03);
+            box-shadow: 0 0 20px rgba(245, 224, 107, 0.6);
+        }
+
+        .total-box:active {
+            transform: scale(0.98);
+            box-shadow: 0 0 10px rgba(245, 224, 107, 0.4);
+        }
+
+        .total-title {
+            font-size: 0.85rem;
+            margin-bottom: 2px;
+            opacity: 0.8;
+        }
+
+        .total-amount {
+            font-size: 2.4rem;
+        }
+
+        .disclaimer-text {
+            font-size: 0.8rem;
+            color: var(--text-gray);
+            text-align: center;
+            margin-top: 15px;
+            line-height: 1.4;
+            font-style: italic;
+        }
+
+        /* Modal Overlay Background */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            z-index: 999;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Sharp Pop-Up Window Design */
+        .modal-box {
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-sharp);
+            padding: 40px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+            box-sizing: border-box;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        /* Vertical stacked selection layout */
+        .modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .modal-btn {
+            padding: 14px 20px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s ease, filter 0.2s ease;
+        }
+
+        /* Interactive Options Scale + Gold Glow on Hover */
+        .btn-action {
+            background-color: var(--gold-accent);
+            color: #000000;
+        }
+
+        .btn-action:hover {
+            filter: brightness(1.05);
+            transform: scale(1.03);
+            box-shadow: 0 0 15px rgba(245, 224, 107, 0.5);
+        }
+        
+        .btn-action:active {
+            transform: scale(0.98);
+        }
+
+        /* Secondary low-profile secondary buttons */
+        .btn-cancel {
+            background-color: #121214;
+            color: var(--text-white);
+            border: 1px solid var(--border-sharp);
+        }
+
+        .btn-cancel:hover {
+            border-color: var(--text-gray);
+            background-color: #17171a;
+        }
+
+    /* FIXED ENTRY TRANSITION KEYFRAMES */
+        @keyframes bgEntrance {
+            0% {
+                transform: scale(1.8); /* Heavily zoomed in at first */
+                filter: blur(0) brightness(1.0);
+            }
+            100% {
+                transform: scale(1.2); /* Smoothly settles into default base zoom */
+                filter: blur(0px) brightness(1.0); /* 👈 FIXED: Keeps the blur and brightness locked in! */
+            }
+        }
+
+        @keyframes cardEntrance {
+            0% {
+                opacity: 0;
+                transform: scale(0.94) translateY(20px); /* Card scales out and glides upward */
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0px);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-video-container">
+    <img src="test1.png" class="bg-video" id="parallax-video" alt="Background">
+</div>
+
+<div class="page-wrapper">
+
+    <div class="calc-card">
+
+        <div class="lang-switch">
+            <button class="lang-btn active" id="btn-en" onclick="setLanguage('en')">Eng</button>
+            <button class="lang-btn" id="btn-vi" onclick="setLanguage('vi')">Vn</button>
+        </div>
+
+        <div class="header-block" id="text-title">RATE ESTIMATOR</div>
+        <div class="header-sub-block" id="text-base">BASE RATE: $90</div>
+
+        <div class="question-block">
+            <p class="question-text" id="q1-text">Does your file have separated layers?*</p>
+            <p class="description" id="q1-desc">Fee might also apply if it is not properly separated/filled/organized.</p>
+            
+            <label class="option-row">
+                <div class="option-left">
+                    <input type="radio" name="layers" value="0" checked onchange="calculateTotal()">
+                    <span id="q1-opt1">Yes</span>
+                </div>
+                <span class="price-tag"></span>
+            </label>
+            <label class="option-row">
+                <div class="option-left">
+                    <input type="radio" name="layers" value="45" onchange="calculateTotal()">
+                    <span id="q1-opt2">No</span>
+                </div>
+                <span class="price-tag active">+50% (+$45)</span>
+            </label>
+        </div>
+
+        <div class="question-block">
+            <p class="question-text" id="q2-text">Do you want extra action / movement?*</p>
+            <p class="description" id="q2-desc">Laughing, yawning, winking, etc.</p>
+            
+            <label class="option-row">
+                <div class="option-left">
+                    <input type="radio" name="movement" value="35" onchange="calculateTotal()">
+                    <span id="q2-opt1">Yes</span>
+                </div>
+                <span class="price-tag active">+$35</span>
+            </label>
+            <label class="option-row">
+                <div class="option-left">
+                    <input type="radio" name="movement" value="0" checked onchange="calculateTotal()">
+                    <span id="q2-opt2">No</span>
+                </div>
+                <span class="price-tag"></span>
+            </label>
+        </div>
+
+        <div class="question-block">
+            <p class="question-text" id="q3-text">Does your file contain complex VFX that need animation?*</p>
+            <p class="description" id="q3-desc">Fire, water, magic, etc.</p>
+            
+            <label class="option-row">
+                <div class="option-left">
+                    <input type="radio" name="vfx" value="10" onchange="calculateTotal()">
+                    <span id="q3-opt1">Yes</span>
+                </div>
+                <span class="price-tag active">+$10</span>
+            </label>
+            <label class="option-row">
+                <div class="option-left">
+                    <input type="radio" name="vfx" value="0" checked onchange="calculateTotal()">
+                    <span id="q3-opt2">No</span>
+                </div>
+                <span class="price-tag"></span>
+            </label>
+        </div>
+
+        <div class="question-block">
+            <p class="question-text" id="q4-text">Render quality*</p>
+            <p class="description" id="q4-desc">Up to 4K (if you have big resolution illustration)</p>
+            
+            <label class="option-row">
+                <div class="option-left">
+                    <input type="radio" name="render" value="0" checked onchange="calculateTotal()">
+                    <span id="q4-opt1">1080p</span>
+                </div>
+                <span class="price-tag"></span>
+            </label>
+            <label class="option-row">
+                <div class="option-left">
+                    <input type="radio" name="render" value="5" onchange="calculateTotal()">
+                    <span id="q4-opt2">2K</span>
+                </div>
+                <span class="price-tag active">+$5</span>
+            </label>
+            <label class="option-row">
+                <div class="option-left">
+                    <input type="radio" name="render" value="10" onchange="calculateTotal()">
+                    <span id="q4-opt3">4K</span>
+                </div>
+                <span class="price-tag active">+$10</span>
+            </label>
+        </div>
+
+        <button class="total-box" onclick="openModal()">
+            <div class="total-title" id="text-total-title">Estimated Total</div>
+            <div class="total-amount">$<span id="final-total">90</span></div>
+        </button>
+
+        <div class="disclaimer-text" id="text-disclaimer">
+            *The final price might be lower or higher depending on the complexity of the illustration.
+        </div>
+
+    </div>
+
+    <div class="social-bottom-bar">
+        <a href="https://x.com/Ezboy_animation" target="_blank" class="social-icon-btn" title="X (Twitter)">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+            </svg>
+        </a>
+        <a href="https://www.facebook.com/tin.ho.98096721/" target="_blank" class="social-icon-btn" title="Facebook">
+            <i class="fa-brands fa-facebook-f"></i>
+        </a>
+        <a href="https://www.youtube.com/@ezboy_animation" target="_blank" class="social-icon-btn" title="YouTube">
+            <i class="fa-brands fa-youtube"></i>
+        </a>
+    </div>
+
+</div>
+
+<div class="modal-overlay" id="commission-modal">
+    <div class="modal-box">
+        <div class="modal-title" id="modal-msg">Ready to commission me?</div>
+        <div class="modal-buttons">
+            <button class="modal-btn btn-action" id="modal-dm" onclick="redirectToTwitter()">
+                <i class="fa-brands fa-x-twitter"></i> <span id="text-opt-dm">Through DM</span>
+            </button>
+            
+            <button class="modal-btn btn-action" id="modal-vgen" onclick="redirectToVGen()">
+                <span id="text-opt-vgen">Through VGen</span>
+            </button>
+
+            <button class="modal-btn btn-cancel" id="modal-save-img" onclick="saveAsImage()" style="border-color: var(--gold-accent); color: var(--gold-accent);">
+                <i class="fa-solid fa-image"></i> <span id="text-opt-save">Save as Image</span>
+            </button>
+            
+            <button class="modal-btn btn-cancel" id="modal-cancel" onclick="closeModal()">
+                <span id="text-opt-cancel">Cancel</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+const basePrice = 90;
+let currentLang = 'en';
+
+const translations = {
+    en: {
+        title: "RATE ESTIMATOR",
+        base: "BASE RATE: $90",
+        totalTitle: "Estimated Total",
+        disclaimer: "*The final price might be lower or higher depending on the complexity of the illustration.",
+        q1Text: "Does your file have separated layers?*",
+        q1Desc: "Fee might also apply if it is not properly separated/filled/organized.",
+        q1Opt1: "Yes",
+        q1Opt2: "No",
+        q2Text: "Do you want extra action / movement?*",
+        q2Desc: "Laughing, yawning, winking, etc.",
+        q2Opt1: "Yes",
+        q2Opt2: "No",
+        q3Text: "Does your file contain complex VFX that need animation?*",
+        q3Desc: "Fire, water, magic, etc.",
+        q3Opt1: "Yes",
+        q3Opt2: "No",
+        q4Text: "Render quality*",
+        q4Desc: "Up to 4K (if you have big resolution illustration)",
+        q4Opt1: "1080p",
+        q4Opt2: "2K",
+        q4Opt3: "4K",
+        modalMsg: "Ready to commission me?",
+        optDm: "Through DM",
+        optVgen: "Through VGen",
+        optSave: "Save as Image",
+        optCancel: "Cancel"
+    },
+    vi: {
+        title: "BẢNG ƯỚC TÍNH GIÁ",
+        base: "GIÁ GỐC: $90",
+        totalTitle: "Tổng Chi Phí Ước Tính",
+        disclaimer: "*Giá cuối cùng có thể thấp hơn hoặc cao hơn tùy thuộc vào độ phức tạp của hình ảnh.",
+        q1Text: "File của bạn có tách lớp (layers) sẵn không?*",
+        q1Desc: "Có thể tính thêm phí nếu các lớp không được tách rõ ràng/tô đầy đủ/sắp xếp hợp lý.",
+        q1Opt1: "Có",
+        q1Opt2: "Không",
+        q2Text: "Bạn có muốn thêm chuyển động phụ / biểu cảm?*",
+        q2Desc: "Cười, ngáp, nháy mắt, v.v.",
+        q2Opt1: "Có",
+        q2Opt2: "Không",
+        q3Text: "File của bạn có hiệu ứng VFX phức tạp cần làm chuyển động không?*",
+        q3Desc: "Lửa, nước, phép thuật, v.v.",
+        q3Opt1: "Có",
+        q3Opt2: "Không",
+        q4Text: "Chất lượng Render* ",
+        q4Desc: "Lên đến 4K (nếu bạn có hình ảnh minh họa độ phân giải lớn)",
+        q4Opt1: "1080p",
+        q4Opt2: "2K",
+        q4Opt3: "4K",
+        modalMsg: "Bạn đã sẵn sàng đặt commission chưa?",
+        optDm: "Nhắn tin qua DM",
+        optVgen: "Qua cổng VGen",
+        optSave: "Lưu thành ảnh",
+        optCancel: "Hủy bỏ"
+    }
+};
+
+function setLanguage(lang) {
+    currentLang = lang;
+    
+    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    document.getElementById('btn-vi').classList.toggle('active', lang === 'vi');
+
+    document.getElementById('text-title').innerText = translations[lang].title;
+    document.getElementById('text-base').innerText = translations[lang].base;
+    document.getElementById('text-total-title').innerText = translations[lang].totalTitle;
+    document.getElementById('text-disclaimer').innerText = translations[lang].disclaimer;
+    
+    document.getElementById('q1-text').innerText = translations[lang].q1Text;
+    document.getElementById('q1-desc').innerText = translations[lang].q1Desc;
+    document.getElementById('q1-opt1').innerText = translations[lang].q1Opt1;
+    document.getElementById('q1-opt2').innerText = translations[lang].q1Opt2;
+
+    document.getElementById('q2-text').innerText = translations[lang].q2Text;
+    document.getElementById('q2-desc').innerText = translations[lang].q2Desc;
+    document.getElementById('q2-opt1').innerText = translations[lang].q2Opt1;
+    document.getElementById('q2-opt2').innerText = translations[lang].q2Opt2;
+
+    document.getElementById('q3-text').innerText = translations[lang].q3Text;
+    document.getElementById('q3-desc').innerText = translations[lang].q3Desc;
+    document.getElementById('q3-opt1').innerText = translations[lang].q3Opt1;
+    document.getElementById('q3-opt2').innerText = translations[lang].q3Opt2;
+
+    document.getElementById('q4-text').innerText = translations[lang].q4Text;
+    document.getElementById('q4-desc').innerText = translations[lang].q4Desc;
+    document.getElementById('q4-opt1').innerText = translations[lang].q4Opt1;
+    document.getElementById('q4-opt2').innerText = translations[lang].q4Opt2;
+    document.getElementById('q4-opt3').innerText = translations[lang].q4Opt3;
+
+    document.getElementById('modal-msg').innerText = translations[lang].modalMsg;
+    document.getElementById('text-opt-dm').innerText = translations[lang].optDm;
+    document.getElementById('text-opt-vgen').innerText = translations[lang].optVgen;
+    document.getElementById('text-opt-save').innerText = translations[lang].optSave;
+    document.getElementById('text-opt-cancel').innerText = translations[lang].optCancel;
+}
+
+function calculateTotal() {
+    let layerPenalty = parseFloat(document.querySelector('input[name="layers"]:checked').value);
+    let extraMovement = parseFloat(document.querySelector('input[name="movement"]:checked').value);
+    let extraVfx = parseFloat(document.querySelector('input[name="vfx"]:checked').value);
+    let extraRender = parseFloat(document.querySelector('input[name="render"]:checked').value);
+
+    let total = basePrice + layerPenalty + extraMovement + extraVfx + extraRender;
+    document.getElementById('final-total').innerText = Math.round(total);
+}
+
+function openModal() {
+    document.getElementById('commission-modal').classList.add('show');
+}
+
+function closeModal() {
+    document.getElementById('commission-modal').classList.remove('show');
+}
+
+function redirectToTwitter() {
+    window.open('https://x.com/Ezboy_animation', '_blank');
+    closeModal();
+}
+
+function redirectToVGen() {
+    window.open('https://vgen.co/Ezboy_animation', '_blank');
+    closeModal();
+}
+
+function saveAsImage() {
+    const element = document.querySelector('.calc-card');
+    const langSwitch = document.querySelector('.lang-switch');
+    
+    // Temporarily hide language toggle buttons to preserve image background layout
+    langSwitch.style.display = 'none';
+
+    html2canvas(element, {
+        backgroundColor: '#1e1e22',
+        scale: 2, // Forces double resolution rendering for ultra-sharp canvas exports
+        logging: false
+    }).then(canvas => {
+        langSwitch.style.display = 'flex';
+
+        const link = document.createElement('a');
+        link.download = `Rate_Estimate_${currentLang.toUpperCase()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+        closeModal();
+    }).catch(err => {
+        console.error("Could not generate card screenshot image:", err);
+        langSwitch.style.display = 'flex';
+    });
+}
+
+// SMOOTH PARALLAX REVERSED: Slides the video upward cleanly while locking the base scale
+window.addEventListener('scroll', function() {
+    const video = document.getElementById('parallax-video');
+    let scrollPosition = window.pageYOffset;
+    
+    // Overrides the entry keyframe once scroll actions begin
+    video.style.animation = 'none'; 
+    
+    // Adjust "-0.3" to change vertical direction/speed, change "scale(1.2)" to adjust zoom profile
+    video.style.transform = 'translateY(' + (scrollPosition * -0.1) + 'px) scale(1.2)';
+});
+
+document.getElementById('commission-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+
+calculateTotal();
+</script>
+
+</body>
+</html>
