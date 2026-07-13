@@ -717,26 +717,28 @@ function saveAsImage() {
     const element = document.querySelector('.calc-card');
     const langSwitch = document.querySelector('.lang-switch');
     
-    // Temporarily hide language toggle buttons to preserve image background layout
+    // 1. Temporarily hide language toggle buttons
     langSwitch.style.display = 'none';
+
+    // 2. HARD-FORCE visibility styles right before the snapshot
+    element.style.opacity = '1';
+    element.style.animation = 'none';
+    element.style.transform = 'none';
 
     html2canvas(element, {
         backgroundColor: '#1e1e22',
-        scale: 2, // Forces double resolution rendering for ultra-sharp canvas exports
+        scale: 2, // Ultra-sharp double resolution
         logging: false,
         useCORS: true,
-        /* 👈 FIXED: Resets the entrance animation properties on a temporary clone so it renders perfectly visible */
-        onclone: (clonedDoc) => {
-            const clonedCard = clonedDoc.querySelector('.calc-card');
-            if (clonedCard) {
-                clonedCard.style.opacity = '1';
-                clonedCard.style.animation = 'none';
-                clonedCard.style.transform = 'none';
-            }
-        }
+        allowTaint: true
     }).then(canvas => {
+        // 3. CLEAN UP: Strip our temporary inline styles so your site goes back to normal
         langSwitch.style.display = 'flex';
+        element.style.opacity = '';
+        element.style.animation = '';
+        element.style.transform = '';
 
+        // 4. Download the image
         const link = document.createElement('a');
         link.download = `Rate_Estimate_${currentLang.toUpperCase()}.png`;
         link.href = canvas.toDataURL('image/png');
@@ -745,7 +747,11 @@ function saveAsImage() {
         closeModal();
     }).catch(err => {
         console.error("Could not generate card screenshot image:", err);
+        // Clean up even if it crashes
         langSwitch.style.display = 'flex';
+        element.style.opacity = '';
+        element.style.animation = '';
+        element.style.transform = '';
     });
 }
 // SMOOTH PARALLAX REVERSED: Slides the video upward cleanly while locking the base scale
