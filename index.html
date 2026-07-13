@@ -723,7 +723,9 @@ function saveAsImage() {
     html2canvas(element, {
         backgroundColor: '#1e1e22',
         scale: 2, // Forces double resolution rendering for ultra-sharp canvas exports
-        logging: false
+        logging: false,
+        useCORS: true, // 👈 ADD THIS: Tells the browser it's safe to process your uploaded background asset
+        allowTaint: true // 👈 ADD THIS: Permits the canvas to compile mixed local text and graphic layers
     }).then(canvas => {
         langSwitch.style.display = 'flex';
 
@@ -738,7 +740,6 @@ function saveAsImage() {
         langSwitch.style.display = 'flex';
     });
 }
-
 // SMOOTH PARALLAX REVERSED: Slides the video upward cleanly while locking the base scale
 window.addEventListener('scroll', function() {
     const video = document.getElementById('parallax-video');
