@@ -724,8 +724,16 @@ function saveAsImage() {
         backgroundColor: '#1e1e22',
         scale: 2, // Forces double resolution rendering for ultra-sharp canvas exports
         logging: false,
-        useCORS: true, // 👈 ADD THIS: Tells the browser it's safe to process your uploaded background asset
-        allowTaint: true // 👈 ADD THIS: Permits the canvas to compile mixed local text and graphic layers
+        useCORS: true,
+        /* 👈 FIXED: Resets the entrance animation properties on a temporary clone so it renders perfectly visible */
+        onclone: (clonedDoc) => {
+            const clonedCard = clonedDoc.querySelector('.calc-card');
+            if (clonedCard) {
+                clonedCard.style.opacity = '1';
+                clonedCard.style.animation = 'none';
+                clonedCard.style.transform = 'none';
+            }
+        }
     }).then(canvas => {
         langSwitch.style.display = 'flex';
 
